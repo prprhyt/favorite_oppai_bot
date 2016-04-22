@@ -38,21 +38,29 @@ function favorite_oppai_tweet(){
     }else{
       payload = "?count=200&max_id="+t_max_id+"&include_rts=false";
     }
-    var response = service.fetch('https://api.twitter.com/1.1/statuses/home_timeline.json');
-    var response_json = JSON.parse(response);
-    for(var tweet_one_of in response_json){
-      if(own_id_str!=response_json[tweet_one_of].user.id_str&&true==oppai_is_alive(response_json[tweet_one_of].text)){
-        ++count_oppai;
-        var response2 = service.fetch('https://api.twitter.com/1.1/favorites/create.json', {
-          method: 'post',
-          payload: { id: response_json[tweet_one_of].id_str }
-        }); 
+    var response_json;
+    try{
+      var response = service.fetch('https://api.twitter.com/1.1/statuses/home_timeline.json'+payload);
+      response_json = JSON.parse(response);
+      for(var tweet_one_of in response_json){
+        if(own_id_str!=response_json[tweet_one_of].user.id_str&&true==oppai_is_alive(response_json[tweet_one_of].text)){
+          ++count_oppai;
+          try{
+            var response2 = service.fetch('https://api.twitter.com/1.1/favorites/create.json', {
+              method: 'post',
+              payload: { id: response_json[tweet_one_of].id_str }
+            });
+          }catch(e){
+            var error = e;
+            Logger.log("message:" + error.message + "\nfileName:" + error.fileName + "\nlineNumber:" + error.lineNumber + "\nstack:" + error.stack);
+          }
+        }
       }
-    }
-    if(response_json.length<200){
-       break;
-    }else{
-       t_max_id =response_json[response_json.length-1].id_str;
+    t_max_id =response_json[response_json.length-1].id_str;
+
+    }catch(e){
+      var error = e;
+      Logger.log("message:" + error.message + "\nfileName:" + error.fileName + "\nlineNumber:" + error.lineNumber + "\nstack:" + error.stack);
     }
   }
   Logger.log(count_oppai);
@@ -66,6 +74,7 @@ function oppai_is_alive(str){
   temp_str = temp_str.replace(/[Ａ-Ｚａ-ｚ０-９]/g, function(s) {
     return String.fromCharCode(s.charCodeAt(0) - 65248);
   });
+  temp_str = temp_str.replace(/\s+/g, "");
   temp_str = hira2kana(temp_str);
   temp_str = hankana2zenkana(temp_str);
   temp_str = zenkana2hepburn_romanization(temp_str);
